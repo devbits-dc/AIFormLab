@@ -1,9 +1,6 @@
 "use client";
-
-import Header from "@/app/_components/Header";
 import { SignIn } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 
 export default function SignInPage() {
   const { theme, systemTheme } = useTheme();

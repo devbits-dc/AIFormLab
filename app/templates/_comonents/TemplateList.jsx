@@ -17,7 +17,6 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import TemplateCard from "@/app/_components/TemplateCard";
 import EmptyStatePlaceholder from "@/app/_components/EmptyStatePlaceholder";
-// import TemplateCard from "./TemplateCard";
 
 const TemplateList = ({ columns, searchQuery }) => {
   const [templateList, setTemplateList] = useState([]);
@@ -123,7 +122,6 @@ const TemplateList = ({ columns, searchQuery }) => {
               openPreview={openPreview}
             />
           ))}
-          {/* {templateList.map((template, index) => <TemplateCard template={template} key={index} index={index} handleUseTemplate={handleUseTemplate} openPreview={openPreview} />)} */}
         </div>
       )}
 

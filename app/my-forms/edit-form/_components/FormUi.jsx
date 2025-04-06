@@ -331,20 +331,27 @@ const FormUi = ({
           )}
         </Droppable>
       </DragDropContext>
-    {!enabledSignIn ? (
-  <button type="submit" disabled={isTemplateCard} className="btn btn-primary">
-    Submit
-  </button>
-) : isSignedIn && enabledSignIn ? (
-  <button type="submit" disabled={ isTemplateCard} className="btn btn-primary">
-    Submit
-  </button>
-) : (
-  <Button disabled={ isTemplateCard}>
-    <SignInButton mode="modal">Sign in before Submit</SignInButton>
-  </Button>
-)}
-
+      {!enabledSignIn ? (
+        <button
+          type="submit"
+          disabled={isTemplateCard}
+          className="btn btn-primary"
+        >
+          Submit
+        </button>
+      ) : isSignedIn && enabledSignIn ? (
+        <button
+          type="submit"
+          disabled={isTemplateCard}
+          className="btn btn-primary"
+        >
+          Submit
+        </button>
+      ) : (
+        <Button disabled={isTemplateCard}>
+          <SignInButton mode="modal">Sign in before Submit</SignInButton>
+        </Button>
+      )}
     </form>
   );
 };
