@@ -88,7 +88,7 @@ const FormUi = ({
   };
 
   const onDragEnd = (result) => {
-    if (!result.destination) return;
+    if (isTemplateCard || !result.destination) return;
 
     const updatedFields = [...jsonForm.fields];
     const [movedField] = updatedFields.splice(result.source.index, 1);

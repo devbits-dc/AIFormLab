@@ -109,7 +109,11 @@ const TemplateList = ({ columns, searchQuery }) => {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 ${
+            columns === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"
+          } gap-4 md:gap-6`}
+        >
           {filteredTemplates.map((template, index) => (
             <TemplateCard
               template={template}

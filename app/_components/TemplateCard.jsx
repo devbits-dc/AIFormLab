@@ -13,10 +13,6 @@ const TemplateCard = ({ template, handleUseTemplate, openPreview, index }) => {
       <img src="./pattern1.svg" className="absolute top-0 right-[-2px]" />
       <img className="aspect-video" src="https://picsum.photos/400/400 " />
       <div className="flex gap-2 items-center">
-        <img
-          className="w-10 h-10 rounded-full"
-          src="https://picsum.photos/50/50"
-        />
         <div className="flex flex-col">
           <h1 className="text-base break-words font-semibold">
             {jsonForm?.formTitle || "Untitled Form"}

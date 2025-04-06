@@ -93,7 +93,7 @@ const Hero = () => {
               View More
             </Button>
           </div>
-          <TemplateList />
+          <TemplateList columns={3} />
         </div>
       </div>
     </section>

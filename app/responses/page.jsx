@@ -37,6 +37,8 @@ const ResponsesPage = () => {
         .orderBy(desc(JsonForms.id));
       setFormList(result);
       setTotalForms(result.length);
+      const activeCount = result.filter((form) => form.isActive).length;
+      setActiveForms(activeCount); 
       setLoading(false);
     } catch (error) {
       console.error(error);
@@ -74,7 +76,7 @@ const ResponsesPage = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
           <Input
             className="pl-10 pr-4 py-2 w-full border rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-            placeholder='Search Templates e.g. "Cricket form"'
+            placeholder='Search Forms e.g. "Cricket form"'
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -120,14 +122,15 @@ const ResponsesPage = () => {
               }
             />
           ) : (
-            <div className="my-5 grid grid-cols-2 gap-5 lg:grid-cols-4 ">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {filteredForms.map((form, index) => (
                 <MyFormCard
                   key={index}
                   formRecord={form}
                   jsonForm={JSON.parse(form.jsonform)}
-                  onClick={() => router.push(`/responses/form/${form.id}`)}
                   setTotalResponses={(value) => setTotalResponses(value)}
+                  options={false}
+                  redirectTo={`/responses/form/${form.id}`}
                 />
               ))}
             </div>
