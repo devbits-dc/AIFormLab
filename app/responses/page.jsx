@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import ResponseStatItem from "./_components/ResponseStatItem";
 import EmptyStatePlaceholder from "../_components/EmptyStatePlaceholder";
 import { ProtectedPage } from "../_components/Protected";
+import Image from "next/image";
 
 const ResponsesPage = () => {
   const router = useRouter();
@@ -90,10 +91,12 @@ const ResponsesPage = () => {
           </div>
         ) : formList.length === 0 ? (
           <div className="flex flex-col items-center justify-center col-span-2 lg:col-span-3 ">
-            <img
+            <Image
               src="/empty.gif"
               alt="Illustration"
               className="w-64 h-64 mb-4"
+              width={256}
+              height={256}
             />
             <p className="font-semibold text-lg text-gray-900">No Responses</p>
           </div>

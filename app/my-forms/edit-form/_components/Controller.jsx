@@ -14,6 +14,7 @@ import Fields from "../../../_data/Fields";
 import { Button } from "../../../../components/ui/button";
 import { Checkbox } from "../../../../components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import Image from "next/image";
 
 const Controller = ({
   selectedTheme,
@@ -129,7 +130,7 @@ const Controller = ({
                 className="cursor-pointer hover:border-2 rouneded-lg border-black"
                 onClick={() => selectedStyle(style)}
               >
-                <img
+                <Image
                   src={style.img}
                   alt={style.name}
                   width={600}

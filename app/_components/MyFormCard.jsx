@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { RWebShare } from "react-web-share";
+import Image from "next/image";
 
 const MyFormCard = ({
   jsonForm,
@@ -144,10 +145,12 @@ const MyFormCard = ({
       className="border rounded-lg overflow-hidden flex flex-col items-center gap-4 p-5 bg-background w-full h-full min-h-[220px] hover:bg-muted/20 cursor-pointer transition-all relative group"
       onClick={handleCardClick}
     >
-      <img
+      <Image
         src={"./formCard-bg.svg"}
         alt={"bg-image"}
         className="absolute bottom-0 right-0 object-cover opacity-60 hover:opacity-100 transition-opacity"
+        width={99}
+        height={121}
       />
 
       {/* Top Section */}
