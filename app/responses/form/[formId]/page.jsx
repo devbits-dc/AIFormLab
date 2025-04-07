@@ -47,10 +47,37 @@ const FormAnalysisPage = () => {
   const [chartData, setChartData] = useState([]);
   const [modalData, setModalData] = useState(null);
   const [jsonForm, setJsonForm] = useState(null);
+  const [columnOrder, setColumnOrder] = useState([]);
   let jsonData = [];
 
   useEffect(() => {
-    const fetchResponses = async (formId) => {
+    const fetchForm = async (formId) => {
+      setLoading(true);
+      try {
+        const result = await db
+          .select()
+          .from(JsonForms)
+          .where(eq(JsonForms.id, formId));
+        
+        if (result && result.length > 0) {
+          const parsedForm = JSON.parse(result[0].jsonform);
+          setJsonForm(parsedForm);
+          
+          // Extract field names from the form definition
+          if (parsedForm?.fields && Array.isArray(parsedForm.fields)) {
+            const formFieldNames = parsedForm.fields.map(field => field.fieldName);
+            setColumnOrder(formFieldNames);
+          }
+          
+          return parsedForm;
+        }
+      } catch (error) {
+        console.error("Error fetching form:", error);
+      }
+      return null;
+    };
+
+    const fetchResponses = async (formId, form) => {
       setLoading(true);
       try {
         const result = await db
@@ -61,7 +88,24 @@ const FormAnalysisPage = () => {
 
         setResponses(result);
 
-        // Group responses by date
+        // If form definition didn't provide column order, extract from responses
+        if ((!form || !form.fields) && result.length > 0) {
+          // Get all unique keys from all responses
+          const allKeys = new Set();
+          result.forEach(response => {
+            try {
+              const parsedResponse = JSON.parse(response.jsonResponse);
+              Object.keys(parsedResponse).forEach(key => allKeys.add(key));
+            } catch (error) {
+              console.error("Error parsing response:", error);
+            }
+          });
+          
+          // Convert to array and set as column order
+          setColumnOrder(Array.from(allKeys));
+        }
+
+        // Group responses by date for chart
         const groupedData = result.reduce((acc, response) => {
           const date = new Date(response.createdAt).toLocaleDateString();
           acc[date] = (acc[date] || 0) + 1;
@@ -82,30 +126,27 @@ const FormAnalysisPage = () => {
       }
     };
 
-    const fetchForm = async (formId) => {
-      setLoading(true);
-      try {
-        const result = await db
-          .select()
-          .from(JsonForms)
-          .where(eq(JsonForms.id, formId));
-        if (result) {
-          setJsonForm(JSON.parse(result[0].jsonform));
-        }
-      } catch (error) {
-        console.error("Error fetching form:", error);
-      } finally {
-        setLoading(false);
+    const loadData = async () => {
+      if (params?.formId) {
+        const form = await fetchForm(params.formId);
+        await fetchResponses(params.formId, form);
       }
     };
 
-    if (params?.formId) {
-      fetchResponses(params.formId);
-      fetchForm(params.formId);
-    }
+    loadData();
   }, [params?.formId]);
 
+  const getFieldLabel = (fieldName) => {
+    if (jsonForm?.fields) {
+      const field = jsonForm.fields.find(f => f.fieldName === fieldName);
+      return field?.fieldTitle || field?.label || formatHeaderName(fieldName);
+    }
+    return formatHeaderName(fieldName);
+  };
+
   const renderCell = (value) => {
+    if (value === null || value === undefined) return "";
+    
     if (Array.isArray(value)) {
       return value
         .map((item) =>
@@ -113,15 +154,30 @@ const FormAnalysisPage = () => {
         )
         .join(", ");
     }
-    return typeof value === "object"
-      ? JSON.stringify(value, null, 2)
-      : value?.toString();
+    
+    // Handle checkbox option responses
+    if (typeof value === "object" && value !== null) {
+      if (value.label) return value.label;
+      if (Object.keys(value).some(key => key === "value" || key === "label")) {
+        return Object.entries(value)
+          .filter(([k, v]) => v === true || (k === "label" && v))
+          .map(([k, v]) => k === "label" ? v : k)
+          .join(", ");
+      }
+      return JSON.stringify(value, null, 2);
+    }
+    
+    return value?.toString() || "";
   };
 
   const ExportData = async () => {
     setLoading(true);
-    responses.map((item) => {
-      jsonData.push(JSON.parse(item.jsonResponse));
+    jsonData = responses.map((item) => {
+      try {
+        return JSON.parse(item.jsonResponse);
+      } catch (error) {
+        return {};
+      }
     });
     exportToExcel(jsonData);
     setLoading(false);
@@ -159,32 +215,30 @@ const FormAnalysisPage = () => {
       return flattened;
     };
 
-    // Function to format headers properly
-    const formatHeader = (key) => {
-      return key
-        .replace(/([a-z])([A-Z])/g, "$1 $2") // Add space between camelCase words
-        .replace(/_/g, " ") // Replace underscores with spaces
-        .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
-    };
-
     // Transform responses & flatten data
     const transformedData = jsonData.map((item) => flattenObject(item));
 
-    // Get original headers from the first response
-    const originalHeaders = Object.keys(transformedData[0]);
+    // Use column order from form definition
+    const excelHeaders = columnOrder.length > 0 
+      ? columnOrder 
+      : Object.keys(transformedData[0] || {});
 
-    // Convert headers to formatted headers
-    const formattedHeaders = originalHeaders.map(formatHeader);
+    // Create worksheet with ordered headers
+    const worksheet = XLSX.utils.json_to_sheet([], { header: excelHeaders });
 
-    // Create worksheet
-    const worksheet = XLSX.utils.json_to_sheet(transformedData, {
-      header: originalHeaders, // Use original keys for data mapping
+    // Add data rows
+    transformedData.forEach((row, idx) => {
+      const rowData = {};
+      excelHeaders.forEach(header => {
+        rowData[header] = row[header] || '';
+      });
+      XLSX.utils.sheet_add_json(worksheet, [rowData], { skipHeader: true, origin: -1 });
     });
 
-    // Rename column headers in worksheet
-    originalHeaders.forEach((key, index) => {
-      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: index }); // Get Excel cell (e.g., A1, B1)
-      worksheet[cellAddress].v = formattedHeaders[index]; // Update cell value
+    // Format header names
+    excelHeaders.forEach((key, index) => {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: index });
+      worksheet[cellAddress].v = getFieldLabel(key);
     });
 
     // Create workbook
@@ -192,7 +246,7 @@ const FormAnalysisPage = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Responses");
 
     // Save file
-    XLSX.writeFile(workbook, jsonForm?.formTitle + ".xlsx");
+    XLSX.writeFile(workbook, jsonForm?.formTitle || "Form Responses.xlsx");
   };
 
   return (
@@ -220,7 +274,7 @@ const FormAnalysisPage = () => {
             <Button
               className="w-full md:w-auto flex items-center gap-2"
               onClick={() => ExportData()}
-              disabled={loading}
+              disabled={loading || responses.length === 0}
             >
               <Download />
               Export Response
@@ -241,22 +295,20 @@ const FormAnalysisPage = () => {
           />
         ) : (
           <>
-            {/* Replace old table with shadcn Table */}
+            {/* Table with form-defined column ordering */}
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow className="border-b">
-                    {responses.length > 0 &&
-                      Object.keys(
-                        JSON.parse(responses[0].jsonResponse || "{}")
-                      ).map((key) => (
-                        <TableHead
-                          key={key}
-                          className="border-r last:border-r-0 font-semibold"
-                        >
-                          {formatHeaderName(key)}
-                        </TableHead>
-                      ))}
+                    {/* Use the column order derived from form definition */}
+                    {columnOrder.map((fieldName) => (
+                      <TableHead
+                        key={fieldName}
+                        className="border-r last:border-r-0 font-semibold"
+                      >
+                        {getFieldLabel(fieldName)}
+                      </TableHead>
+                    ))}
                     <TableHead className="border-r font-semibold">
                       Created By
                     </TableHead>
@@ -274,20 +326,24 @@ const FormAnalysisPage = () => {
 
                     return (
                       <TableRow key={index} className="border-b">
-                        {Object.entries(parsedResponse).map(([key, value]) => (
-                          <TableCell
-                            key={key}
-                            className="max-w-[200px] truncate border-r"
-                            onClick={() => setModalData(value)}
-                          >
-                            {renderCell(value)}
-                          </TableCell>
-                        ))}
+                        {/* Map each column in the consistent order from form definition */}
+                        {columnOrder.map((fieldName) => {
+                          const value = parsedResponse[fieldName];
+                          return (
+                            <TableCell
+                              key={fieldName}
+                              className="max-w-[200px] truncate border-r"
+                              onClick={() => value && setModalData(value)}
+                            >
+                              {renderCell(value)}
+                            </TableCell>
+                          );
+                        })}
                         <TableCell className="border-r">
                           {response.createdBy}
                         </TableCell>
                         <TableCell>
-                          {new Date(response.createdAt).toLocaleDateString()}
+                          {response.createdAt}
                         </TableCell>
                       </TableRow>
                     );
@@ -313,10 +369,10 @@ const FormAnalysisPage = () => {
               </ResponsiveContainer>
             </div>
 
-            {/* Update modal to use shadcn styling */}
+            {/* Modal for detailed data view */}
             {modalData && (
               <div
-                className="fixed inset-0 bg-black/50 flex justify-center items-center"
+                className="fixed inset-0 bg-black/50 flex justify-center items-center z-50"
                 onClick={() => setModalData(null)}
               >
                 <div
@@ -324,7 +380,7 @@ const FormAnalysisPage = () => {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h2 className="text-lg font-semibold mb-4">Full Data</h2>
-                  <pre className="text-sm text-foreground/70 whitespace-pre-wrap bg-muted p-4 rounded-md">
+                  <pre className="text-sm text-foreground/70 whitespace-pre-wrap bg-muted p-4 rounded-md overflow-auto max-h-96">
                     {typeof modalData === "object"
                       ? JSON.stringify(modalData, null, 2)
                       : modalData}
