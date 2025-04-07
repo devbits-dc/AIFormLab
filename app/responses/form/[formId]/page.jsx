@@ -3,15 +3,6 @@ import React, { useEffect, useState } from "react";
 import { db } from "@/config";
 import { JsonForms, userResponses } from "@/config/schema";
 import { eq } from "drizzle-orm";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
 import { ArrowLeft, Download } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -26,6 +17,8 @@ import {
 } from "@/components/ui/table";
 import * as XLSX from "xlsx";
 import { ProtectedPage } from "@/app/_components/Protected";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const formatHeaderName = (key) => {
   // Convert camelCase or snake_case to Title Case with spaces
@@ -112,11 +105,14 @@ const FormAnalysisPage = () => {
           return acc;
         }, {});
 
-        // Convert to array format for Recharts
+        // Convert to array format for chart
         const formattedChartData = Object.keys(groupedData).map((date) => ({
           date,
-          responses: groupedData[date],
+          submissions: groupedData[date],
         }));
+
+        // Sort by date
+        formattedChartData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
         setChartData(formattedChartData);
       } catch (error) {
@@ -352,22 +348,70 @@ const FormAnalysisPage = () => {
               </Table>
             </div>
 
-            <h1 className="text-2xl font-semibold w-full">
-              Responses Overtime
-            </h1>
-
-            {/* Chart */}
-            <div className="bg-muted/40 p-4 rounded-lg shadow-md mt-6">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <XAxis dataKey="date" stroke="#8884d8" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Bar dataKey="responses" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {/* Area Chart using shadcn styling */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Submissions Over Time</CardTitle>
+                <CardDescription>
+                  {responses.length} total submissions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={chartData}
+                      margin={{
+                        top: 10,
+                        right: 30,
+                        left: 0,
+                        bottom: 0,
+                      }}
+                    >
+                      <defs>
+                        <linearGradient id="colorSubmissions" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#14b8a6" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#888888"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis 
+                        stroke="#888888"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        allowDecimals={false}
+                      />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          borderColor: "hsl(var(--border))",
+                          borderRadius: "0.5rem"
+                        }}
+                        labelStyle={{
+                          color: "hsl(var(--foreground))"
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="submissions" 
+                        stroke="#14b8a6" 
+                        fillOpacity={1} 
+                        fill="url(#colorSubmissions)" 
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Modal for detailed data view */}
             {modalData && (
