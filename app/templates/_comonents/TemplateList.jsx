@@ -17,7 +17,6 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import TemplateCard from "@/app/_components/TemplateCard";
 import EmptyStatePlaceholder from "@/app/_components/EmptyStatePlaceholder";
-// import TemplateCard from "./TemplateCard";
 
 const TemplateList = ({ columns, searchQuery }) => {
   const [templateList, setTemplateList] = useState([]);
@@ -109,7 +108,11 @@ const TemplateList = ({ columns, searchQuery }) => {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 ${
+            columns === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"
+          } gap-4 md:gap-6`}
+        >
           {filteredTemplates.map((template, index) => (
             <TemplateCard
               template={template}
@@ -119,7 +122,6 @@ const TemplateList = ({ columns, searchQuery }) => {
               openPreview={openPreview}
             />
           ))}
-          {/* {templateList.map((template, index) => <TemplateCard template={template} key={index} index={index} handleUseTemplate={handleUseTemplate} openPreview={openPreview} />)} */}
         </div>
       )}
 

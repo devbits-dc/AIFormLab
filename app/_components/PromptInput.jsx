@@ -27,6 +27,11 @@ const PromptInput = ({ prompt: initialPrompt = "" }) => {
     ",On Basis of description create JSON form with formTitle, formHeading along with fieldName, FieldTitle, FieldType, Placeholder, label, required fields, and checkbox and select field type options will be in array only and in JSON format";
 
   const handleSubmit = async () => {
+    if (!user) {
+      router.push("/sign-in");
+      return;
+    }
+
     if (!prompt.trim()) return;
     setIsLoading(true);
 

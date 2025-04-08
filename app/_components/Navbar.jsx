@@ -16,7 +16,7 @@ const publicMenuList = [
 ];
 
 const userMenuList = [
-  { id: 0, name: "Create", path: "/create" },
+  { id: 0, name: "Home", path: "/" },
   { id: 1, name: "My Forms", path: "/my-forms" },
   { id: 2, name: "Responses", path: "/responses" },
   { id: 3, name: "Templates", path: "/templates" },

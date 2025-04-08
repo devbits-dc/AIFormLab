@@ -26,12 +26,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { RWebShare } from "react-web-share";
+import Image from "next/image";
 
 const MyFormCard = ({
   jsonForm,
   formRecord,
   refreshData,
   setTotalResponses,
+  options = true,
+  redirectTo
 }) => {
   const router = useRouter();
   const { user } = useUser();
@@ -77,12 +80,12 @@ const MyFormCard = ({
 
       const updatedJson = JSON.stringify({
         ...JSON.parse(existingForm.jsonform),
-        formTitle: renameTitle, 
+        formTitle: renameTitle,
       });
 
       const result = await db
         .update(JsonForms)
-        .set({ jsonform: updatedJson }) 
+        .set({ jsonform: updatedJson })
         .where(eq(JsonForms.id, formRecord.id))
         .returning({ id: JsonForms.id, jsonform: JsonForms.jsonform });
 
@@ -125,11 +128,11 @@ const MyFormCard = ({
   };
 
   const handleCardClick = (e) => {
-  
     if (renameModalOpen || alertOpen) {
-      e.stopPropagation(); 
+      e.stopPropagation();
     } else {
-      router.push(`/my-forms/edit-form/${formRecord.id}`);
+      setLoading(true);
+      router.push(redirectTo);
     }
   };
 
@@ -142,10 +145,12 @@ const MyFormCard = ({
       className="border rounded-lg overflow-hidden flex flex-col items-center gap-4 p-5 bg-background w-full h-full min-h-[220px] hover:bg-muted/20 cursor-pointer transition-all relative group"
       onClick={handleCardClick}
     >
-      <img
+      <Image
         src={"./formCard-bg.svg"}
         alt={"bg-image"}
         className="absolute bottom-0 right-0 object-cover opacity-60 hover:opacity-100 transition-opacity"
+        width={99}
+        height={121}
       />
 
       {/* Top Section */}
@@ -155,78 +160,80 @@ const MyFormCard = ({
         </div>
 
         {/* Ellipsis Icon - Visible Only on Hover */}
-        <DropdownMenu
-          open={activeDropdown === formRecord.id}
-          onOpenChange={(isOpen) =>
-            setActiveDropdown(isOpen ? formRecord.id : null)
-          }
-        >
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="icon"
-              onClick={(e) => e.stopPropagation()}
-              className={`transition-opacity focus:ring-0 ${
-                activeDropdown === formRecord.id
-                  ? "opacity-100"
-                  : "opacity-0 group-hover:opacity-100"
-              }`}
-            >
-              <EllipsisVertical className="cursor-pointer text-gray-500 hover:text-gray-700" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            onClick={(e) => e.stopPropagation()}
-            className="w-56 p-1"
+        {options && (
+          <DropdownMenu
+            open={activeDropdown === formRecord.id}
+            onOpenChange={(isOpen) =>
+              setActiveDropdown(isOpen ? formRecord.id : null)
+            }
           >
-            <DropdownMenuItem className="flex items-center p-2 cursor-pointer hover:bg-muted focus:bg-muted rounded-md">
-              <RWebShare
-                data={{
-                  text:
-                    jsonForm?.formHeading +
-                    " Build your form in seconds using AI Builder",
-                  url:
-                    process.env.NEXT_PUBLIC_BASE_URL +
-                    "/aiform/" +
-                    formRecord?.id,
-                  title: jsonForm?.formTitle || "Share Form",
-                }}
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="icon"
+                onClick={(e) => e.stopPropagation()}
+                className={`transition-opacity focus:ring-0 ${
+                  activeDropdown === formRecord.id
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100"
+                }`}
+              >
+                <EllipsisVertical className="cursor-pointer text-gray-500 hover:text-gray-700" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onClick={(e) => e.stopPropagation()}
+              className="w-56 p-1"
+            >
+              <DropdownMenuItem className="flex items-center p-2 cursor-pointer hover:bg-muted focus:bg-muted rounded-md">
+                <RWebShare
+                  data={{
+                    text:
+                      jsonForm?.formHeading +
+                      " Build your form in seconds using AI Builder",
+                    url:
+                      process.env.NEXT_PUBLIC_BASE_URL +
+                      "/aiform/" +
+                      formRecord?.id,
+                    title: jsonForm?.formTitle || "Share Form",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onShareWindowClose={handleShareSuccess}
+                >
+                  <div className="flex items-center w-full">
+                    <Share className="h-4 w-4 mr-5 text-muted-foreground" />
+                    <span className="font-medium">Share</span>
+                  </div>
+                </RWebShare>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
+                  setRenameModalOpen(true);
                 }}
-                onShareWindowClose={handleShareSuccess}
               >
                 <div className="flex items-center w-full">
-                  <Share className="h-4 w-4 mr-5 text-muted-foreground" />
-                  <span className="font-medium">Share</span>
+                  <Edit className="h-4 w-4 mr-5 text-muted-foreground" />
+                  <span className="font-medium">Rename</span>
                 </div>
-              </RWebShare>
-            </DropdownMenuItem>
+              </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation(); 
-                setRenameModalOpen(true);
-              }}
-            >
-              <div className="flex items-center w-full">
-                <Edit className="h-4 w-4 mr-5 text-muted-foreground" />
-                <span className="font-medium">Rename</span>
-              </div>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                setAlertOpen(true);
-              }}
-              className="flex items-center p-2 cursor-pointer hover:bg-muted focus:bg-muted rounded-md"
-            >
-              <Trash className="h-4 w-4 mr-3 text-red-500" />
-              <span className="font-medium text-red-500">Delete</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAlertOpen(true);
+                }}
+                className="flex items-center p-2 cursor-pointer hover:bg-muted focus:bg-muted rounded-md"
+              >
+                <Trash className="h-4 w-4 mr-3 text-red-500" />
+                <span className="font-medium text-red-500">Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Title & Heading */}
@@ -292,7 +299,10 @@ const MyFormCard = ({
               onChange={(e) => setRenameTitle(e.target.value)}
             />
             <div className="flex justify-end gap-2 mt-3">
-              <Button variant="outline" onClick={() => setRenameModalOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setRenameModalOpen(false)}
+              >
                 Cancel
               </Button>
               <Button onClick={updateFormTitle}>Save</Button>

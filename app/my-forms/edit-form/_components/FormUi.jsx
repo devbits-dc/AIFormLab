@@ -67,12 +67,15 @@ const FormUi = ({
   };
 
   const handleCheckboxChange = (fieldName, itemName, value) => {
+    console.log(formData)
     const list = formData?.[fieldName] ? formData?.[fieldName] : [];
+    console.log("list", list)
     if (value) {
       list.push({ label: itemName, value: value });
       setFormData({ ...formData, [fieldName]: list });
     } else {
       const result = list.filter((item) => item.label !== itemName);
+      console.log
       setFormData({ ...formData, [fieldName]: result });
     }
   };
@@ -88,7 +91,7 @@ const FormUi = ({
   };
 
   const onDragEnd = (result) => {
-    if (!result.destination) return;
+    if (isTemplateCard || !result.destination) return;
 
     const updatedFields = [...jsonForm.fields];
     const [movedField] = updatedFields.splice(result.source.index, 1);
@@ -104,7 +107,12 @@ const FormUi = ({
 
     jsonForm?.fields?.forEach((field) => {
       console.log("field", field.fieldName);
-      if (field?.required && !formData?.[field.fieldName]) {
+      if (
+        field?.required &&
+        (formData?.[field.fieldName] === undefined ||
+          (Array.isArray(formData?.[field.fieldName]) && formData?.[field.fieldName].length === 0) ||
+          formData?.[field.fieldName] === "")
+      ) {
         console.log(
           "missingRequiredFields",
           field,
@@ -244,7 +252,7 @@ const FormUi = ({
                               <Checkbox
                                 onCheckedChange={(v) =>
                                   handleCheckboxChange(
-                                    field?.label,
+                                    field?.fieldName,
                                     item.label ? item.label : item,
                                     v
                                   )
@@ -331,20 +339,27 @@ const FormUi = ({
           )}
         </Droppable>
       </DragDropContext>
-    {!enabledSignIn ? (
-  <button type="submit" disabled={isTemplateCard} className="btn btn-primary">
-    Submit
-  </button>
-) : isSignedIn && enabledSignIn ? (
-  <button type="submit" disabled={ isTemplateCard} className="btn btn-primary">
-    Submit
-  </button>
-) : (
-  <Button disabled={ isTemplateCard}>
-    <SignInButton mode="modal">Sign in before Submit</SignInButton>
-  </Button>
-)}
-
+      {!enabledSignIn ? (
+        <button
+          type="submit"
+          disabled={isTemplateCard}
+          className="btn btn-primary"
+        >
+          Submit
+        </button>
+      ) : isSignedIn && enabledSignIn ? (
+        <button
+          type="submit"
+          disabled={isTemplateCard}
+          className="btn btn-primary"
+        >
+          Submit
+        </button>
+      ) : (
+        <Button disabled={isTemplateCard}>
+          <SignInButton mode="modal">Sign in before Submit</SignInButton>
+        </Button>
+      )}
     </form>
   );
 };

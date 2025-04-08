@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import React, { useState } from "react";
-import TemplateCard from "./TemplateCard";
 import { useRouter } from "next/navigation";
 import TemplateList from "../templates/_comonents/TemplateList";
 import PromptInput from "./PromptInput";
@@ -93,7 +92,7 @@ const Hero = () => {
               View More
             </Button>
           </div>
-          <TemplateList />
+          <TemplateList columns={3} />
         </div>
       </div>
     </section>
