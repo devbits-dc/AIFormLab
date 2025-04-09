@@ -48,15 +48,18 @@ const ResponsesPage = () => {
     }
   };
 
+
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+
+    if (!trimmedQuery) {
       setFilteredForms(formList);
       return;
     }
 
     const filtered = formList.filter((form) => {
       const formTitle = JSON.parse(form.jsonform)?.formTitle || "";
-      return formTitle.toLowerCase().includes(searchQuery.toLowerCase());
+      return formTitle.toLowerCase().includes(trimmedQuery);
     });
 
     setFilteredForms(filtered);
